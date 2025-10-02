@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { CorsInitialisation } from './utils/cors.setup.js';
 import dbConnect from './config/dbConnect.js';
+import userRouter from './routes/user.route.js';
 
 const app = express();
 
@@ -18,6 +19,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.use(helmet());
 app.use(CorsInitialisation);
+
+app.use('/api/v1/user/auth', userRouter);
 
 app.listen(PORT, () => {
     logger.info(`Server is running on PORT: ${PORT}`);
