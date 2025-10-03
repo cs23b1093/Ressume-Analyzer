@@ -6,6 +6,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    avatar_url: {
+        type: String,
+        default: null
+    },
     email: {
         type: String,
         required: true,
@@ -34,10 +38,14 @@ const userSchema = new mongoose.Schema({
         default: 'user'
     },
     plan: {
-        type: String,
-        enum: ['free', 'premium'],
-        default: 'free'
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Plan',
+        default: null
     },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
 }, {
     timeseries: true
 })
