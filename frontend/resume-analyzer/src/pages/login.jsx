@@ -33,8 +33,15 @@ const Login = () => {
     .then(res => res.json())
     .then(data => {
         console.log(data);
+        if (data.success) {
+            localStorage.setItem('AccessToken', data.accessToken);
+            navigate('/dashboard');
+        }
         setIsLoading(false);
-        navigate('/dashboard');
+    })
+    .catch(err => {
+        console.log(err);
+        setIsLoading(false);
     })
   };
 
