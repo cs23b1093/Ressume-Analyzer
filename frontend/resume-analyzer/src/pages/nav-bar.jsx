@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Menu, X, User } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const NavBar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -47,7 +49,7 @@ const NavBar = () => {
           {/* Profile & Mobile menu button */}
           <div className="flex items-center space-x-4">
             {/* Profile Button */}
-            <button className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors duration-200">
+            <button className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors duration-200" onClick={() => navigate("/profile")}>
               <User size={18} />
               <span className="hidden sm:block">Profile</span>
             </button>

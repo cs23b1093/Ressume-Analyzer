@@ -23,6 +23,7 @@ const Dashboard = () => {
     
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       setUploadedFile(e.dataTransfer.files[0]);
+      console.log("File dropped:", e.dataTransfer.files[0]);
       setIsLoading(true);
       setTimeout(() => setIsLoading(false), 2000);
     }

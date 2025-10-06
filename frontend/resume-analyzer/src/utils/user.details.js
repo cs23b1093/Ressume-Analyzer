@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 function useAuth() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [user, setUser] = useState(null);
   
-    useEffect(() => {
       fetch('http://localhost:3000/api/v1/user/auth/profile', {
         method: 'GET',
         headers: {
@@ -18,6 +18,7 @@ function useAuth() {
         console.log('Auth check response:', data);
         if (data.success) {
           setIsAuthenticated(true);
+          setUser(data.user);
         } else {
           setIsAuthenticated(false);
         }
@@ -29,9 +30,8 @@ function useAuth() {
       .finally(() => {
         setIsLoading(false);
       });
-    }, []);
   
-    return { isAuthenticated, isLoading };
+    return { isAuthenticated, isLoading, user };
   }
 
 export default useAuth;

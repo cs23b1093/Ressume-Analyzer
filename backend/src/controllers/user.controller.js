@@ -7,6 +7,13 @@ import generateToken from '../utils/generateToken.js'
 import sendEmail from '../config/resend.setup.js';
 import { otpGen } from '../utils/otpgenerator.js';
 
+const redisKey = `user:17-05-2004`
+
+const removeCache = (redisClient) => {
+	redisClient.del("user*")
+	logger.warn('user cache removed');
+}
+
 const registerUser = asyncHandler(async (req, res, next) => {
 	try {
 		const { error } = ValidateNewUserData(req.body);
@@ -54,6 +61,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
 		})
 		await user.save();
 		logger.info('user saved');
+		await removeCache(req.redisClient);
 
 		const userData = user.toObject();
 		delete userData.password;
@@ -122,9 +130,13 @@ const loginUser = asyncHandler(async (req, res, next) => {
 		delete userData.password;
 
 		logger.info('user logged in');
+		removeCache(req.redisClient);
+
 		res.status(200).json({
 			message: 'User logged in successfully',
 			user: userData,
+			success: true,
+			statusCode: 200,
 			accessToken,
 			refreshToken
 		})
@@ -165,6 +177,8 @@ const logoutUser = asyncHandler(async (req, res) => {
 		res.clearCookie('refreshToken', options);
 	
 		logger.info('user logged out');
+		removeCache(req.redisClient);
+
 		res.status(200).json({
 			message: 'User logged out successfully'
 		})
@@ -198,6 +212,8 @@ const resetPassword = asyncHandler(async (req, res, next) => {
 		user.password = newPassword;
 		await user.save();
 		logger.info('password reset');
+		removeCache(req.redisClient);
+
 		res.status(200).json({
 			message: 'Password reset successfully'
 		})
@@ -220,6 +236,20 @@ const getProfile = asyncHandler(async (req, res, next) => {
 				message: 'User not found'
 			})
 		}
+
+		const catchedUser = await req.redisClient.get(redisKey);
+		if (catchedUser) {
+			logger.warn('user found in cache');
+			const user = JSON.parse(catchedUser);
+			delete user.password;
+			return res.status(200).json({
+				message: 'User found successfully',
+				user,
+				success: true,
+				statusCode: 200
+			})
+		}
+
 		const user = await User.findById(userId);
 		if (!user) {
 			logger.error('user not found');
@@ -230,8 +260,12 @@ const getProfile = asyncHandler(async (req, res, next) => {
 		const userData = user.toObject();
 		delete userData.password;
 		logger.info('user found');
+		await req.redisClient.set(redisKey, `user:${JSON.stringify(userData)}`, 'EX', 3600);
+
 		res.status(200).json({
 			message: 'User found successfully',
+			success: true,
+			statusCode: 200,
 			user: userData
 		})
 	} catch (error) {
@@ -286,6 +320,8 @@ const updateProfile = asyncHandler(async (req, res, next) => {
 		const userData = user.toObject();
 		delete userData.password;
 		logger.info('user updated');
+		removeCache(req.redisClient);
+
 		res.status(200).json({
 			message: 'User updated successfully',
 			user: userData
