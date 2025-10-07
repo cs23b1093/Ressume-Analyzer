@@ -5,137 +5,78 @@ import logger from "../utils/logger.js";
 import { ValidateResumeData } from "../utils/validateResumeData.js";
 
 const createResume = asyncHandler(async (req, res, next) => {
-    try {
-        logger.info('hit create resume...');
-        const { error } = ValidateResumeData(req.body);
-        if (error) {
-            logger.error(`error details: ${error.details}`);
-            const apiError = new ApiError({
-                message: error.details[0].message,
-                status: 400,
-                error
-            });
-            res.status(400).json({
-                ...apiError
-            });
-        }
-
-        const isAlreadyExisting = await Resume.findOne({ user_id: req.user.user_id });
-        if (isAlreadyExisting) {
-            logger.error('resume already exists');
-            const apiError = new ApiError({
-                message: 'Resume already exists',
-                status: 400,
-            });
-            res.status(400).json({
-                ...apiError
-            });
-        }
-
-        const user_id = req.user.user_id;
-        const { address, phone, email, achievements, objective, summary, links, social_media, interests, languages, hobbies, references, awards, certifications, projects, skills, experience, education } = req.body;
-        let resume;
-        try {
-            resume = new Resume({
-                user_id,
-                address,
-                phone,
-                email,
-                achievements,
-                objective,
-                summary,
-                links,
-                social_media,
-                interests,
-                languages,
-                experience,
-                hobbies,
-                references,
-                awards,
-                certifications,
-                projects,
-                skills,
-                education
-            });
-            const p = resume.save();
-            const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('SAVE TIMEOUT')), 8000));
-            await Promise.race([p, timeout]);
-
-        } catch (error) {
-            logger.error(`error: ${error.message}`);
-        }
-
-        delete resume.address;
-        delete resume.phone;
-        delete resume.email;
-
-        logger.info('resume created');
-        res.status(201).json({
-            message: 'Resume created successfully',
-            resume,
-            success: true,
-            statusCode: 201
-        });
-    } catch (error) {
-        logger.error(`error: ${error.message}`);
-        const apiError = new ApiError({
-            message: error.message,
-            status: 500,
-            error
-        });
-        res.status(500).json({
-            ...apiError
-        });
+    logger.info('hit create resume...');
+    const { error } = ValidateResumeData(req.body);
+    if (error) {
+        throw new ApiError({ message: error.details[0].message, status: 400, error });
     }
+
+    const user_id = req.user.user_id;
+    if (!user_id) {
+        throw new ApiError({ message: 'User not found from token', status: 404 });
+    }
+
+    const isAlreadyExisting = await Resume.findOne({ user_id });
+    if (isAlreadyExisting) {
+        throw new ApiError({ message: 'Resume already exists', status: 400 });
+    }
+
+    const resume = new Resume({
+        ...req.body,
+        user_id,
+    });
+
+    await resume.save();
+    logger.info('resume created');
+
+    // Invalidate the cache
+    const resumeCacheKey = `resume:${user_id}`;
+    await req.redisClient.del(resumeCacheKey);
+    logger.warn('resume cache removed');
+
+    res.status(201).json({
+        message: 'Resume created successfully',
+        resume,
+        success: true,
+        statusCode: 201
+    });
 })
 
 const getResume = asyncHandler(async (req, res, next) => {
-    try {
-        logger.info('hit get resume...');
+    logger.info('hit get resume...');
 
-        const user_id = req.user.user_id;
-        if (!user_id) {
-            const apiError = new ApiError({
-                message: 'User not found',
-                success: false,
-                statusCode: 404,
-            });
-            res.status(404).json({
-                ...apiError
-            });
-        }
+    const user_id = req.user.user_id;
+    if (!user_id) {
+        throw new ApiError({ message: 'User not found from token', status: 404 });
+    }
 
-        const resume = await Resume.findOne({ user_id });
-        if (!resume) {
-            const apiError = new ApiError({
-                message: 'Resume not found',
-                success: false,
-                statusCode: 404,
-            });
-            res.status(404).json({
-                ...apiError
-            });
-        }
+    const resumeCacheKey = `resume:${user_id}`;
+    const cachedResume = await req.redisClient.get(resumeCacheKey);
 
-        logger.info('resume found');
-        res.status(200).json({
-            message: 'Resume found successfully',
-            resume,
+    if (cachedResume) {
+        logger.warn('resume found in cache');
+        return res.status(200).json({
+            message: 'Resume found successfully (from cache)',
+            resume: JSON.parse(cachedResume),
             success: true,
             statusCode: 200
-        })
-    } catch (error) {
-        logger.error(`error: ${error.message}`);
-        const apiError = new ApiError({
-            message: error.message,
-            statusCode: 500,
-            error,
-            success: false,
-        });
-        res.status(500).json({
-            ...apiError
         });
     }
+
+    const resume = await Resume.findOne({ user_id });
+    if (!resume) {
+        throw new ApiError({ message: 'Resume not found in database', status: 404 });
+    }
+
+    logger.info('resume found in db, caching...');
+    await req.redisClient.set(resumeCacheKey, JSON.stringify(resume), 'EX', 3600);
+
+    res.status(200).json({
+        message: 'Resume found successfully',
+        resume,
+        success: true,
+        statusCode: 200
+    });
 })
 
 export {

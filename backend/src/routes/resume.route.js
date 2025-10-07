@@ -1,5 +1,5 @@
 import express from "express";
-import getUser from "../middleware/user.middleware.js";
+import { getUser } from "../middleware/user.middleware.js";
 import { createResume, getResume } from "../controllers/ressume.controller.js";
 
 const resumeRouter = express();

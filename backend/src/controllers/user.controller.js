@@ -6,11 +6,13 @@ import { ValidateNewUserData, ValidateLoginData } from '../utils/user.validate.j
 import generateToken from '../utils/generateToken.js'
 import sendEmail from '../config/resend.setup.js';
 import { otpGen } from '../utils/otpgenerator.js';
+import { RefreshToken } from '../models/refreshToken.js';
+import jwt from 'jsonwebtoken';
 
-const redisKey = `user:17-05-2004`
+const redisKey = process.env.redisKey;
 
-const removeCache = (redisClient) => {
-	redisClient.del("user*")
+const removeCache = (req, key) => {
+	req.redisClient.del(key)
 	logger.warn('user cache removed');
 }
 
@@ -88,31 +90,20 @@ const loginUser = asyncHandler(async (req, res, next) => {
 		const { error } = ValidateLoginData(req.body);
 		if (error) {
 			logger.error(error.details.map(d => d.message).join(", "));
-			const apiError = new ApiError({ 
-				message: error.details[0].message, 
-				status: 400, 
-				error 
-			});
-			return res.status(400).json(apiError);
+			throw new ApiError({ message: error.details[0].message, status: 400 });
 		}
 
 		const { username, password } = req.body;
 		const user = await User.findOne({ username });
 		if (!user) {
 			logger.error('user not found');
-			const apiError = new ApiError({ message: 'User not found', status: 404 })
-			return res.status(404).json({
-				...apiError
-			})
+			throw new ApiError({ message: 'User not found', status: 404 });
 		}
 
 		const isPasswordCorrect = await user.comparePassword(password);
 		if (!isPasswordCorrect) {
 			logger.error('password is incorrect');
-			const apiError = new ApiError({ message: 'Password is incorrect', status: 401 })
-			return res.status(401).json({
-				...apiError
-			})
+			throw new ApiError({ message: 'Password is incorrect', status: 401 });
 		}
 
 		const { accessToken, refreshToken } = await generateToken(user._id);
@@ -130,7 +121,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
 		delete userData.password;
 
 		logger.info('user logged in');
-		removeCache(req.redisClient);
+		removeCache(req, `user:${user._id}`);
 
 		res.status(200).json({
 			message: 'User logged in successfully',
@@ -173,11 +164,11 @@ const logoutUser = asyncHandler(async (req, res) => {
 			maxAge: 7 * 24 * 60 * 60 * 10
 		}
 		
+		removeCache(req, `user:${userId}`);
 		res.clearCookie('accessToken', options);
 		res.clearCookie('refreshToken', options);
 	
 		logger.info('user logged out');
-		removeCache(req.redisClient);
 
 		res.status(200).json({
 			message: 'User logged out successfully'
@@ -227,53 +218,40 @@ const resetPassword = asyncHandler(async (req, res, next) => {
 });
 
 const getProfile = asyncHandler(async (req, res, next) => {
-	try {
-		logger.info('hit get profile...');
-		const userId = req.user?.user_id;
-		if (!userId) {
-			logger.error('user not found');
-			return res.status(404).json({
-				message: 'User not found'
-			})
-		}
-
-		const catchedUser = await req.redisClient.get(redisKey);
-		if (catchedUser) {
-			logger.warn('user found in cache');
-			const user = JSON.parse(catchedUser);
-			delete user.password;
-			return res.status(200).json({
-				message: 'User found successfully',
-				user,
-				success: true,
-				statusCode: 200
-			})
-		}
-
-		const user = await User.findById(userId);
-		if (!user) {
-			logger.error('user not found');
-			return res.status(404).json({
-				message: 'User not found'
-			})
-		}
-		const userData = user.toObject();
-		delete userData.password;
-		logger.info('user found');
-		await req.redisClient.set(redisKey, `user:${JSON.stringify(userData)}`, 'EX', 3600);
-
-		res.status(200).json({
-			message: 'User found successfully',
-			success: true,
-			statusCode: 200,
-			user: userData
-		})
-	} catch (error) {
-		logger.error(`Get profile failed: unexpected error: ${error.message}}`);
-		res.status(500).json({
-			message: `Internal server error while getting profile: ${error.message}}`
-		})
+	logger.info('hit get profile...');
+	const userId = req.user?.user_id;
+	if (!userId) {
+		throw new ApiError({ message: 'User not found from token', status: 404 });
 	}
+
+	const userCacheKey = `user:${userId}`;
+	const cachedUser = await req.redisClient.get(userCacheKey);
+
+	if (cachedUser) {
+		logger.warn('user found in cache');
+		return res.status(200).json({
+			message: 'User found successfully (from cache)',
+			user: JSON.parse(cachedUser),
+			success: true,
+			statusCode: 200
+		});
+	}
+
+	const user = await User.findById(userId).select('-password');
+	if (!user) {
+		throw new ApiError({ message: 'User not found in database', status: 404 });
+	}
+
+	const userData = user.toObject();
+	logger.info('user found in db, caching...');
+	await req.redisClient.set(userCacheKey, JSON.stringify(userData), 'EX', 3600);
+
+	res.status(200).json({
+		message: 'User found successfully',
+		success: true,
+		statusCode: 200,
+		user: userData
+	});
 })
 
 const updateProfile = asyncHandler(async (req, res, next) => {
@@ -289,9 +267,7 @@ const updateProfile = asyncHandler(async (req, res, next) => {
 		const user = await User.findById(userId);
 		if (!user) {
 			logger.error('user not found');
-			return res.status(404).json({
-				message: 'User not found'
-			})
+			throw new ApiError({ message: 'User not found', status: 404 })
 		}
 		const { username, email, fullName, password } = req.body || {};
 		if (username && username !== user.username) {
@@ -334,11 +310,70 @@ const updateProfile = asyncHandler(async (req, res, next) => {
 	}
 })
 
+const getNewAccessToken = asyncHandler(async (req, res) => {
+	try {
+		logger.info('hit get new access token...');
+		const refreshTokenFromCookie = req.cookies.refreshToken || req.headers.authorization?.split(' ')[1];
+
+		if (!refreshTokenFromCookie) {
+			const apiError = new ApiError({ message: "Refresh token not found", statusCode: 401 });
+			return res.status(401).json({ ...apiError });
+		}
+
+		const nowTime = new Date();
+		const token = RefreshToken.findOne({
+			token: refreshTokenFromCookie,
+			expiredAt: { $gt: nowTime }
+		})
+		
+		if (!token) {
+			logger.warn('refresh token not found');
+			const apiError = new ApiError({ message: "Refresh token not found", statusCode: 401 });
+			return res.status(401).json({ ...apiError });
+		}
+
+		jwt.verify(refreshTokenFromCookie, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
+			if (err) {
+				const apiError = new ApiError({ message: "Refresh token is invalid or expired", status: 401 });
+				return res.status(401).json({ ...apiError });
+			}
+			logger.info('no error occured');
+
+			const newAccessToken = jwt.sign(
+				{ user_id: decoded.user_id },
+				process.env.ACCESS_TOKEN_SECRET,
+				{ expiresIn: "15m" }
+			);
+
+			const options = {
+				httpOnly: true,
+				secure: process.env.NODE_ENV === 'production',
+				sameSite: 'strict',
+				maxAge: 7 * 24 * 60 * 60 * 1000
+			}
+
+			res.cookie('accessToken', newAccessToken, options);
+
+			return res.status(200).json({
+				accessToken: newAccessToken,
+				success: true,
+				statusCode: 200,
+			});
+		});
+	} catch (error) {
+		logger.error(`Get new access token failed: unexpected error: ${error.message}}`);
+		console.log(error.stack);
+		const apiError = new ApiError({ message: `Internal server error while getting new access token: ${error.message}}`, status: 500 });
+		res.status(500).json({ ...apiError });
+	}
+});
+
 export {
 	registerUser,
 	loginUser,
 	logoutUser,
     resetPassword,
 	getProfile,
-	updateProfile
+	updateProfile,
+	getNewAccessToken
 }

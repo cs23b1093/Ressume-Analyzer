@@ -21,10 +21,11 @@ const getUser = (req, res, next) => {
                 ...apiError
             })
         }
-
         req.user = user;
         next();
     })
 }
 
-export default getUser;
+export {
+    getUser
+}
