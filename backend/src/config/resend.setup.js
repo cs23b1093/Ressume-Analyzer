@@ -1,5 +1,6 @@
 import { Resend } from 'resend';
 import dotenv from 'dotenv';
+import { ApiError } from '../utils/errorFormat';
 
 dotenv.config();
 
@@ -11,7 +12,8 @@ const sendEmail = async (mailOptions) => {
   });
 
   if (error) {
-    return console.error({ error });
+    const apiError = new ApiError({ message: "Error sending email", stack: error.stack, status: 500 })
+    return { ...apiError };
   }
 
   console.log({ data });

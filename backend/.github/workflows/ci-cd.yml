@@ -1,0 +1,69 @@
+name: Backend CI/CD
+
+# Trigger on push to main or PRs targeting main
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Setup Node.js
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      # 3. Cache node_modules for faster builds
+      - name: Cache Node.js modules
+        uses: actions/cache@v3
+        with:
+          path: backend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('backend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # 4. Install dependencies
+      - name: Install dependencies
+        run: |
+          cd backend
+          npm install
+
+      # 5. Run tests
+      - name: Run backend tests
+        run: |
+          cd backend
+          npm test
+
+      # 6. Build backend (if you have a build step)
+      - name: Build backend
+        run: |
+          cd backend
+          npm run build || echo "No build step defined"
+
+      # 7. Deploy backend via SSH/PM2
+      - name: Deploy backend
+        if: github.ref == 'refs/heads/main'
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+        run: |
+          echo "$SSH_PRIVATE_KEY" > private_key
+          chmod 600 private_key
+          ssh -i private_key -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST "
+            cd /path/to/backend &&
+            git pull &&
+            npm install &&
+            pm2 restart backend
+          "

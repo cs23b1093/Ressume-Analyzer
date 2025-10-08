@@ -12,11 +12,12 @@ import { RedisStore } from 'rate-limit-redis';
 import { globalErrorHandler } from './middleware/errorHandler.js';
 import resumeRouter from './routes/resume.route.js';
 import planRouter from './routes/plan.route.js'
+// import { apiVersioning } from './middleware/errorHandler.js';
 
 const app = express();
 
 dotenv.config();
-dbConnect();
+export default app;
 
 const PORT = process.env.PORT || 3000;
 const redisClient = new Redis(
@@ -60,6 +61,8 @@ const limitExceeded = rateLimit({
 	// }),
 });
 
+// app.use(apiVersioning('v1'));
+
 app.use((req, res, next) => {
     req.redisClient = redisClient;
     next();
@@ -77,7 +80,10 @@ app.use('/api/v1/user/auth', userRouter);
 app.use('/api/v1/resume', resumeRouter);
 app.use('/api/v1/plan', planRouter);
 
-app.listen(PORT, () => {
+if (process.env.NODE_ENV !== 'test') {
+    dbConnect();
+    app.listen(PORT, () => {
     logger.info(`Server is running on PORT: ${PORT}`);
     logger.info(`Redis is running on URI: ${process.env.REDIS_URI}`);
 })
+}

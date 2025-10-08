@@ -8,6 +8,11 @@ const MONGO_URI = process.env.MONGOOSE_URI;
 if (!MONGO_URI) logger.error(`Mongose uri not found`);
 
 const dbConnect = async () => {
+    if (process.env.NODE_ENV === 'test') {
+        logger.info("Skipping real MongoDB connection (using in-memory Mongo)");
+        return;
+    }
+
     try {
         const connct = await mongoose.connect(MONGO_URI);
         logger.info(`MongoDB connected: ${connct.connection.host}`);

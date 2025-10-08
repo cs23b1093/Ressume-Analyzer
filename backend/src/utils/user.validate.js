@@ -25,7 +25,7 @@ const ValidateNewUserData = (data) => {
         password: joi.string()
                      .min(8)
                      .max(64)
-                     .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/)
+                     .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).+$/)
                      .required()
                      .messages({
                         "string.empty": "Password is required",
@@ -68,15 +68,9 @@ const ValidateLoginData = (data) => {
                "string.pattern.base": "Username must contain only letters, numbers, and underscores"
            }),
        password: joi.string()
-           .min(8)
-           .max(64)
-           .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9]).+$/)
            .required()
            .messages({
                "string.empty": "Password is required",
-               "string.min": "Password must be at least 8 characters long",
-               "string.max": "Password must be at most 64 characters long",
-               "string.pattern.base": "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character"
            }),
    });
    return schema.validate(data, { abortEarly: false });

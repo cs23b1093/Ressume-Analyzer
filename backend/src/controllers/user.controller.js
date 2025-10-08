@@ -11,8 +11,8 @@ import jwt from 'jsonwebtoken';
 
 const redisKey = process.env.redisKey;
 
-const removeCache = (req, key) => {
-	req.redisClient.del(key)
+const removeCache = (redisClient, key) => {
+	redisClient.del(key)
 	logger.warn('user cache removed');
 }
 
@@ -63,13 +63,13 @@ const registerUser = asyncHandler(async (req, res, next) => {
 		})
 		await user.save();
 		logger.info('user saved');
-		await removeCache(req.redisClient);
+		removeCache(req.redisClient);
 
 		const userData = user.toObject();
 		delete userData.password;
 		res.status(201).json({
 			message: 'User created successfully',
-			user
+			user: userData
 		})
 	} catch (error) {
 		logger.error(`Register failed: unexpected error: ${error.message}}`, {
@@ -121,7 +121,7 @@ const loginUser = asyncHandler(async (req, res, next) => {
 		delete userData.password;
 
 		logger.info('user logged in');
-		removeCache(req, `user:${user._id}`);
+		removeCache(req.redisClient, `user:${user._id}`);
 
 		res.status(200).json({
 			message: 'User logged in successfully',
@@ -164,7 +164,7 @@ const logoutUser = asyncHandler(async (req, res) => {
 			maxAge: 7 * 24 * 60 * 60 * 10
 		}
 		
-		removeCache(req, `user:${userId}`);
+		removeCache(req.redisClient, `user:${userId}`);
 		res.clearCookie('accessToken', options);
 		res.clearCookie('refreshToken', options);
 	
@@ -311,61 +311,51 @@ const updateProfile = asyncHandler(async (req, res, next) => {
 })
 
 const getNewAccessToken = asyncHandler(async (req, res) => {
-	try {
-		logger.info('hit get new access token...');
-		const refreshTokenFromCookie = req.cookies.refreshToken || req.headers.authorization?.split(' ')[1];
+    logger.info('hit get new access token...');
+    const refreshTokenFromCookie = req.cookies.refreshToken || req.headers.authorization?.split(' ')[1];
 
-		if (!refreshTokenFromCookie) {
-			const apiError = new ApiError({ message: "Refresh token not found", statusCode: 401 });
-			return res.status(401).json({ ...apiError });
-		}
+    if (!refreshTokenFromCookie) {
+        throw new ApiError({ message: "Refresh token not found", status: 401 });
+    }
 
-		const nowTime = new Date();
-		const token = RefreshToken.findOne({
-			token: refreshTokenFromCookie,
-			expiredAt: { $gt: nowTime }
-		})
-		
-		if (!token) {
-			logger.warn('refresh token not found');
-			const apiError = new ApiError({ message: "Refresh token not found", statusCode: 401 });
-			return res.status(401).json({ ...apiError });
-		}
+    const nowTime = new Date();
+    const tokenInDb = await RefreshToken.findOne({
+        token: refreshTokenFromCookie,
+        expiredAt: { $gt: nowTime }
+    });
+    
+    if (!tokenInDb) {
+        logger.warn('refresh token not found or expired in db');
+        throw new ApiError({ message: "Refresh token is invalid or expired", status: 401 });
+    }
 
-		jwt.verify(refreshTokenFromCookie, process.env.REFRESH_TOKEN_SECRET, (err, decoded) => {
-			if (err) {
-				const apiError = new ApiError({ message: "Refresh token is invalid or expired", status: 401 });
-				return res.status(401).json({ ...apiError });
-			}
-			logger.info('no error occured');
+    try {
+        const decoded = jwt.verify(refreshTokenFromCookie, process.env.REFRESH_TOKEN_SECRET);
+        logger.info('refresh token verified');
 
-			const newAccessToken = jwt.sign(
-				{ user_id: decoded.user_id },
-				process.env.ACCESS_TOKEN_SECRET,
-				{ expiresIn: "15m" }
-			);
+        const newAccessToken = jwt.sign(
+            { user_id: decoded.user_id },
+            process.env.ACCESS_TOKEN_SECRET,
+            { expiresIn: "15m" }
+        );
 
-			const options = {
-				httpOnly: true,
-				secure: process.env.NODE_ENV === 'production',
-				sameSite: 'strict',
-				maxAge: 7 * 24 * 60 * 60 * 1000
-			}
+        const options = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        };
 
-			res.cookie('accessToken', newAccessToken, options);
+        res.cookie('accessToken', newAccessToken, options);
 
-			return res.status(200).json({
-				accessToken: newAccessToken,
-				success: true,
-				statusCode: 200,
-			});
-		});
-	} catch (error) {
-		logger.error(`Get new access token failed: unexpected error: ${error.message}}`);
-		console.log(error.stack);
-		const apiError = new ApiError({ message: `Internal server error while getting new access token: ${error.message}}`, status: 500 });
-		res.status(500).json({ ...apiError });
-	}
+        return res.status(200).json({
+            accessToken: newAccessToken,
+            success: true,
+            statusCode: 200,
+        });
+    } catch (error) {
+        throw new ApiError({ message: "Refresh token is invalid or expired", status: 401 });
+    }
 });
 
 export {
