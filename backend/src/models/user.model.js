@@ -42,6 +42,11 @@ const userSchema = new mongoose.Schema({
         ref: 'Plan',
         default: null
     },
+    planType: {
+        type: String,
+        enum: ['Free', 'Pro'],
+        default: 'Free'
+    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -67,3 +72,20 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
 };
 
 export const User = mongoose.model('User', userSchema);
+
+// TODO:
+    /* 
+        Frontend
+            -> parsing -> send to model -> find ATS and gives response 
+            -> jobs matching via link or current existing jobs in database
+            -> updating resume
+            -> download feature 
+            -> post to social media
+
+        Backend 
+            -> Storing user, resume and plan data
+            -> notification => gmail
+            -> catching, encryption user persional data
+            -> oAuth and simple auth
+            -> subscription handling, autopayment    
+    */

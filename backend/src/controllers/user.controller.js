@@ -79,8 +79,11 @@ const registerUser = asyncHandler(async (req, res, next) => {
 			method: req.method,
 			bodyKeys: Object.keys(req.body || {})
 		})
-		res.status(500).json({
-			message: `Internal server error while registering user: ${error.message}}`
+		const statusCode = error instanceof ApiError ? error.statusCode : 500;
+		res.status(statusCode).json({
+			message: `Internal server error while registering user: ${error.message}}`,
+			success: false,
+			statusCode,
 		})
 	}
 })
@@ -139,9 +142,13 @@ const loginUser = asyncHandler(async (req, res, next) => {
 			method: req.method,
 			bodyKeys: Object.keys(req.body || {})
 		})
-		res.status(500).json({
-			message: `Internal server error while logging in user: ${error.message}`
-		})
+		const statusCode = error instanceof ApiError ? error.statusCode : 500;
+		const message = `Internal server error while logging in user: ${error.message}`;
+		res.status(statusCode).json({
+			message,
+			success: false,
+			statusCode,
+		});
 	}
 })
 
@@ -175,9 +182,11 @@ const logoutUser = asyncHandler(async (req, res) => {
 		})
 	} catch (error) {
 		logger.error(`Logout failed: unexpected error: ${error.message}}`)
-		res.status(500).json({
-			message: `Internal server error while logging out user: ${error.message}}`
-		})
+		res.status(error.status || 500).json({
+			message: error.message || 'Internal server error while logging out user',
+			success: false,
+			statusCode: error.status || 500
+		});
 	}
 })
 
@@ -211,9 +220,11 @@ const resetPassword = asyncHandler(async (req, res, next) => {
 
     } catch (error) {
         logger.error(`Reset password failed: unexpected error: ${error.message}}`);
-        res.status(500).json({
-            message: `Internal server error while resetting password: ${error.message}}`
-        })
+        res.status(error.status || 500).json({
+            message: error.message || 'Internal server error while resetting password',
+			success: false,
+			statusCode: error.status || 500
+        });
     }
 });
 
@@ -304,9 +315,11 @@ const updateProfile = asyncHandler(async (req, res, next) => {
 		})
 	} catch (error) {
 		logger.error(`Update profile failed: unexpected error: ${error.message}}`);
-		res.status(500).json({
-			message: `Internal server error while updating profile: ${error.message}}`
-		})
+		res.status(error.status || 500).json({
+			message: error.message || 'Internal server error while updating profile',
+			success: false,
+			statusCode: error.status || 500
+		});
 	}
 })
 

@@ -97,4 +97,5 @@ resumeSchema.pre('save', async function() {
     }
 })
 
+
 export const Resume = mongoose.model('Resume', resumeSchema);

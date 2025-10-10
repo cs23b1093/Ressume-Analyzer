@@ -19,23 +19,23 @@ const getPlan = asyncHandler(async (req, res, next) => {
         logger.warn('plan found in cache');
         return res.status(200).json({
             message: 'Plan found successfully (from cache)',
-            plans: JSON.parse(cachedPlan),
+            plan: JSON.parse(cachedPlan),
             success: true,
             statusCode: 200
         });
     }
 
-    const plans = await Plan.find({ user_id });
-    if (!plans || plans.length === 0) {
-        throw new ApiError({ message: 'Plans not found in database', status: 404 });
+    const plan = await Plan.findOne({ user_id });
+    if (!plan) {
+        throw new ApiError({ message: 'Plan not found in database', status: 404 });
     }
 
     logger.info('plan found in db, caching...');
-    await req.redisClient.set(planCacheKey, JSON.stringify(plans), 'EX', 3600);
+    await req.redisClient.set(planCacheKey, JSON.stringify(plan), 'EX', 3600);
 
     res.status(200).json({
-        message: 'Plans found successfully',
-        plans,
+        message: 'Plan found successfully',
+        plan,
         success: true,
         statusCode: 200
     });
@@ -63,7 +63,13 @@ const createPlan = asyncHandler(async (req, res, next) => {
         ...req.body,
         user_id
     })
+
     await newPlan.save();
+
+    // Invalidate the cache
+    const planCacheKey = `plan:${user_id}`;
+    await req.redisClient.del(planCacheKey);
+    logger.warn('plan cache removed after creation');
     logger.info('plan created');
 
     res.status(201).json({
@@ -137,6 +143,27 @@ const updatePlan = asyncHandler(async (req, res, next) => {
         statusCode: 200
     });
 })
+
+const deletePlan = asyncHandler(async (req, res, next) => {
+    logger.info('hit delete plan...');
+
+    const user_id = req.user.user_id;
+    if (!user_id) {
+        throw new ApiError({ message: 'User not found from token', status: 404 });
+    }
+
+    const deletedPlan = await Plan.findOneAndDelete({ user_id });
+
+    if (!deletedPlan) {
+        throw new ApiError({ message: 'Plan not found to delete', status: 404 });
+    }
+
+    const planCacheKey = `plan:${user_id}`;
+    await req.redisClient.del(planCacheKey);
+    logger.warn('plan cache removed after deletion');
+
+    res.status(200).json({ message: 'Plan deleted successfully', success: true, statusCode: 200 });
+});
 
 export { 
     getPlan,

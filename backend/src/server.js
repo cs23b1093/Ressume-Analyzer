@@ -12,6 +12,7 @@ import { RedisStore } from 'rate-limit-redis';
 import { globalErrorHandler } from './middleware/errorHandler.js';
 import resumeRouter from './routes/resume.route.js';
 import planRouter from './routes/plan.route.js'
+import '../jobs/testRunner.job.js'
 // import { apiVersioning } from './middleware/errorHandler.js';
 
 const app = express();
@@ -30,7 +31,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.use(helmet());
 app.use(CorsInitialisation);
-app.use(globalErrorHandler);
 
 app.use((req, res, next) => {
     logger.info(`url: ${req.originalUrl} method: ${req.method}`);
@@ -74,16 +74,18 @@ app.use('/api/v1/user/auth/reset-password', limitExceeded);
 app.use('/api/v1/user/auth/login', limitExceeded);
 app.use('/api/v1/user/auth/logout', limitExceeded);
 
-app.use('api/v1/resume/createResume', limitExceeded);
+app.use('/api/v1/resume', limitExceeded);
 
 app.use('/api/v1/user/auth', userRouter);
 app.use('/api/v1/resume', resumeRouter);
 app.use('/api/v1/plan', planRouter);
+
+app.use(globalErrorHandler);
 
 if (process.env.NODE_ENV !== 'test') {
     dbConnect();
     app.listen(PORT, () => {
     logger.info(`Server is running on PORT: ${PORT}`);
     logger.info(`Redis is running on URI: ${process.env.REDIS_URI}`);
-})
+    })
 }

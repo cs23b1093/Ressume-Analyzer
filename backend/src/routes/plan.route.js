@@ -8,6 +8,6 @@ planRouter.use(getUser);
 
 planRouter.route('/').get(getPlan);
 planRouter.route('/').post(createPlan);
-planRouter.route('/').put(updatePlan);
+planRouter.route('/update').put(updatePlan);
 
 export default planRouter

@@ -1,6 +1,5 @@
 import request from 'supertest';
 import { connect, clearDatabase, closeDatabase } from './tests.setup.js';
-import mongoose from 'mongoose';
 import { User } from '../models/user.model.js';
 import app from '../server.js';
 
@@ -76,7 +75,7 @@ describe("Auth: Login", () => {
                 username: userPayload.username,
                 password: userPayload.password  + "incorrect"
             })
-            .expect(500);
+            .expect(401);
 
         expect(res.body).toHaveProperty("message", "Internal server error while logging in user: Password is incorrect");
     });
@@ -88,7 +87,7 @@ describe("Auth: Login", () => {
                 username: "nonexistentuser",
                 password: userPayload.password
             })
-            .expect(500);
+            .expect(404);
 
         expect(res.body).toHaveProperty("message", "Internal server error while logging in user: User not found");
     });

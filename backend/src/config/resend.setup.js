@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 import dotenv from 'dotenv';
-import { ApiError } from '../utils/errorFormat';
+import { ApiError } from '../utils/errorFormat.js';
 
 dotenv.config();
 
