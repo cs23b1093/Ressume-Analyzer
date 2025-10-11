@@ -8,7 +8,8 @@ const resend = new Resend(process.env.RESEND_API_KEY || "");
 
 const sendEmail = async (mailOptions) => {
   const { data, error } = await resend.emails.send({
-    ...mailOptions
+    ...mailOptions,
+    from: process.env.DEFAULT_EMAIL_SENDER,
   });
 
   if (error) {

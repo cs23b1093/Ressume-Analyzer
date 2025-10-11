@@ -12,7 +12,12 @@ import { RedisStore } from 'rate-limit-redis';
 import { globalErrorHandler } from './middleware/errorHandler.js';
 import resumeRouter from './routes/resume.route.js';
 import planRouter from './routes/plan.route.js'
-import '../jobs/testRunner.job.js'
+import jobRouter from './routes/job.route.js';
+if (process.env.NODE_ENV !== 'test') {
+    import('../jobs/testRunner.job.js');
+}
+import bodyParser from 'body-parser';
+import morganBody from 'morgan-body';
 // import { apiVersioning } from './middleware/errorHandler.js';
 
 const app = express();
@@ -31,6 +36,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.use(helmet());
 app.use(CorsInitialisation);
+
+if (process.env.NODE_ENV !== 'test') {
+    app.use(bodyParser.json());
+    morganBody(app);
+}
 
 app.use((req, res, next) => {
     logger.info(`url: ${req.originalUrl} method: ${req.method}`);
@@ -79,6 +89,7 @@ app.use('/api/v1/resume', limitExceeded);
 app.use('/api/v1/user/auth', userRouter);
 app.use('/api/v1/resume', resumeRouter);
 app.use('/api/v1/plan', planRouter);
+app.use('/api/v1/job', jobRouter);
 
 app.use(globalErrorHandler);
 

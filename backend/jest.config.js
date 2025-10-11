@@ -7,4 +7,5 @@ export default {
   verbose: true,
   forceExit: true,
   detectOpenHandles: true,
+  setupFilesAfterEnv: ["<rootDir>/src/tests/setup.js"],
 };

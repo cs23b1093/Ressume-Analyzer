@@ -9,8 +9,6 @@ import { otpGen } from '../utils/otpgenerator.js';
 import { RefreshToken } from '../models/refreshToken.js';
 import jwt from 'jsonwebtoken';
 
-const redisKey = process.env.redisKey;
-
 const removeCache = (redisClient, key) => {
 	redisClient.del(key)
 	logger.warn('user cache removed');
@@ -41,7 +39,6 @@ const registerUser = asyncHandler(async (req, res, next) => {
 
 		const otp = otpGen();
 		const mailOptions = {
-			from: process.env.EMAIL_USER,
 			to: email,
 			subject: 'Verification code',
 			html: `<h2>Your verification code is ${otp}</h2>`

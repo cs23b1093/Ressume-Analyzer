@@ -1,5 +1,15 @@
 import request from 'supertest';
 import { connect, clearDatabase, closeDatabase } from './tests.setup.js';
+
+// Mock ioredis to avoid Redis connection issues in tests
+jest.mock('ioredis', () => {
+  return jest.fn().mockImplementation(() => ({
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue('OK'),
+    del: jest.fn().mockResolvedValue(1),
+  }));
+});
+
 import app from '../server.js';
 
 const userPayload = {
