@@ -13,6 +13,9 @@ import { globalErrorHandler } from './middleware/errorHandler.js';
 import resumeRouter from './routes/resume.route.js';
 import planRouter from './routes/plan.route.js'
 import jobRouter from './routes/job.route.js';
+import resumeParserRouter from './routes/resumeParser.route.js';
+import chatRouter from './routes/chat.route.js';
+
 if (process.env.NODE_ENV !== 'test') {
     import('../jobs/testRunner.job.js');
 }
@@ -90,6 +93,8 @@ app.use('/api/v1/user/auth', userRouter);
 app.use('/api/v1/resume', resumeRouter);
 app.use('/api/v1/plan', planRouter);
 app.use('/api/v1/job', jobRouter);
+app.use('/api/v1/resume-parser', resumeParserRouter);
+app.use('/api/v1/chat', chatRouter);
 
 app.use(globalErrorHandler);
 

@@ -1,10 +1,87 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Upload, Sparkles, Target, Zap } from "lucide-react";
+import { Link } from "react-router-dom"; // Make sure you have react-router-dom installed
+import PdfParser from "../utils/pdfjs-dist.js";
+import ParsedResume from "../components/ParsedResume.jsx";
 
 const Dashboard = () => {
   const [loading, setIsLoading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
+
+  // Chat sidebar states
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    { id: 1, role: "assistant", content: "Hi — upload your resume (PDF) or ask a question about it." },
+  ]);
+  const [input, setInput] = useState("");
+  const [fileName, setFileName] = useState(null);
+  const [parsedData, setParsedData] = useState(null);
+  const fileRef = useRef(null);
+  const messageIdCounter = useRef(messages.length + 1);
+
+  const parseFile = async (file) => {
+    try {
+      const text = await PdfParser(file);
+      const response = await fetch('http://localhost:3000/api/v1/resume-parser/parse', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to parse resume');
+      }
+      const data = await response.json();
+      setParsedData(data.parsedData);
+      setMessages((m) => [
+        ...m,
+        { id: messageIdCounter.current++, role: "assistant", content: <ParsedResume parsedData={data.parsedData} /> },
+      ]);
+    } catch (error) {
+      console.error("Error parsing PDF:", error);
+      setMessages((m) => [
+        ...m,
+        { id: messageIdCounter.current++, role: "assistant", content: "Sorry, there was an error parsing your resume." },
+      ]);
+    }
+  };
+
+  const sendChatMessage = async (message) => {
+    if (!parsedData) {
+      setMessages((m) => [
+        ...m,
+        { id: messageIdCounter.current++, role: "assistant", content: "Please upload a resume first before asking questions." },
+      ]);
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:3000/api/v1/chat/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message, parsedData }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        setMessages((m) => [
+          ...m,
+          { id: messageIdCounter.current++, role: "assistant", content: result.response },
+        ]);
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error("Error sending chat message:", error);
+      setMessages((m) => [
+        ...m,
+        { id: messageIdCounter.current++, role: "assistant", content: "Sorry, there was an error processing your question." },
+      ]);
+    }
+  };
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -16,25 +93,50 @@ const Dashboard = () => {
     }
   };
 
-  const handleDrop = (e) => {
+  const handleDrop = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setUploadedFile(e.dataTransfer.files[0]);
-      console.log("File dropped:", e.dataTransfer.files[0]);
+      const file = e.dataTransfer.files[0];
+      setUploadedFile(file);
       setIsLoading(true);
-      setTimeout(() => setIsLoading(false), 2000);
+      await parseFile(file);
+      setIsLoading(false);
     }
   };
 
-  const handleFileInput = (e) => {
+  const handleFileInput = async (e) => {
     if (e.target.files && e.target.files[0]) {
-      setUploadedFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setUploadedFile(file);
       setIsLoading(true);
-      setTimeout(() => setIsLoading(false), 2000);
+      await parseFile(file);
+      setIsLoading(false);
     }
+  };
+
+  // Chat handlers
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+
+  const handleFileChange = (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    setFileName(f.name);
+    setMessages((m) => [
+      ...m,
+      { id: messageIdCounter.current++, role: "user", content: `Uploaded ${f.name}` },
+    ]);
+    // In a real app: upload file to server or pass to parser here
+  };
+
+  const onSend = async () => {
+    if (!input.trim()) return;
+    const text = input.trim();
+    setMessages((m) => [...m, { id: messageIdCounter.current++, role: "user", content: text }]);
+    setInput("");
+    await sendChatMessage(text);
   };
 
   return (
@@ -202,6 +304,88 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Chat Button */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={toggleSidebar}
+          aria-label="Chat with PDF"
+          className="flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-xl hover:scale-105 transition-transform"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.864 9.864 0 01-3.89-.77L3 20l1.23-3.44A7.975 7.975 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+        </button>
+      </div>
+
+      {/* Chat Sidebar */}
+      {sidebarOpen && (
+        <div className="fixed top-0 right-0 h-full w-96 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50">
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-semibold">R</div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-sm font-medium">Chat with PDF</div>
+                      <span className="px-2 py-0.5 text-xs font-semibold text-green-800 bg-green-100 rounded-full">Free</span>
+                    </div>
+                    <div className="text-xs text-slate-500">Ask questions about your resume</div>
+                  </div>
+                </div>
+                <button onClick={toggleSidebar} className="p-2 rounded-md hover:bg-slate-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Messages */}
+              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
+                {messages.map((m) => (
+                  <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`${m.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white ring-1 ring-black/5 text-slate-800'} max-w-[80%] px-3 py-2 rounded-lg`}>
+                      <div className="text-sm">
+                        {m.content || m.text}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Input */}
+              <div className="px-3 py-3 border-t bg-white">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => fileRef.current?.click()}
+                    className="p-2 rounded-md hover:bg-slate-50"
+                    title="Upload PDF"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                  <input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') onSend(); }}
+                    placeholder={fileName ? `Ask about ${fileName} or type a question...` : 'Type a message or upload a resume (PDF)'}
+                    className="flex-1 px-3 py-2 rounded-full border bg-white text-sm outline-none focus:ring-1 focus:ring-indigo-300"
+                  />
+                  <button
+                    onClick={onSend}
+                    className="ml-2 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-600 text-white text-sm hover:brightness-110"
+                  >
+                    Send
+                  </button>
+                </div>
+              </div>
+            </div>
+            {/* Hidden file input */}
+            <input ref={fileRef} type="file" accept="application/pdf" onChange={handleFileChange} className="hidden" />
+          </div>
+      )}
     </div>
   );
 };

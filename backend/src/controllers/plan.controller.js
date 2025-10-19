@@ -168,5 +168,6 @@ const deletePlan = asyncHandler(async (req, res, next) => {
 export { 
     getPlan,
     createPlan,
-    updatePlan 
+    updatePlan,
+    deletePlan
 };

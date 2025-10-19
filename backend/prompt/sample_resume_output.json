@@ -1,0 +1,220 @@
+{
+  "examples": [
+    {
+      "name": "Aarav Mehta",
+      "summary": "Frontend developer with strong UI skills but lacks measurable impact and depth in React ecosystem.",
+      "suggestions": [
+        {
+          "section": "Experience",
+          "current": "Worked on building landing pages using React and CSS.",
+          "critique": "Reads like a task — missing metrics and outcomes.",
+          "rewrite": "[SUGGESTED] Developed and launched responsive marketing pages using React; improved conversion rate by 18% through A/B tested UI optimizations.",
+          "impactSuggestions": "Add: conversion rate, load time, user traffic"
+        },
+        {
+          "section": "Skills",
+          "current": "React, CSS, HTML",
+          "critique": "Too generic; lacks mention of frameworks or tooling.",
+          "rewrite": "React (Hooks, Context API), Styled Components, Next.js, Tailwind CSS"
+        }
+      ],
+      "seniorSummaryNote": "Focus on business metrics and frontend performance impact."
+    },
+    {
+      "name": "Neha Sharma",
+      "summary": "Backend engineer with Node.js experience but no ownership signal or architecture depth.",
+      "suggestions": [
+        {
+          "section": "Experience",
+          "current": "Built REST APIs for e-commerce site.",
+          "critique": "Vague scale — could apply to a student project or large production.",
+          "rewrite": "[SUGGESTED] Designed and implemented REST APIs powering a multi-vendor e-commerce platform (~20k daily orders), ensuring 99.9% uptime.",
+          "impactSuggestions": "Add: uptime, orders/day, DB performance"
+        }
+      ],
+      "seniorSummaryNote": "Highlight ownership, system design choices, and scaling experience."
+    },
+    {
+      "name": "Rohit Sinha",
+      "summary": "Machine learning engineer with strong academic projects but lacks production ML experience.",
+      "suggestions": [
+        {
+          "section": "Projects",
+          "current": "Built a CNN for image classification.",
+          "critique": "Missing dataset details, metrics, and deployment info.",
+          "rewrite": "[SUGGESTED] Trained CNN achieving 93% accuracy on CIFAR-10; deployed model with FastAPI, handling 500 inference requests/sec.",
+          "impactSuggestions": "Add: dataset size, accuracy, latency"
+        }
+      ],
+      "seniorSummaryNote": "Show deployment, monitoring, and data pipeline scale."
+    },
+    {
+      "name": "Priya Nair",
+      "summary": "Full-stack developer with MERN stack but lacks quantified achievements.",
+      "suggestions": [
+        {
+          "section": "Experience",
+          "current": "Developed full-stack application using MERN stack.",
+          "critique": "Too general; missing what problem was solved or impact achieved.",
+          "rewrite": "[SUGGESTED] Led full-stack development of an internal CRM using MERN stack; reduced customer query response time by 40%.",
+          "impactSuggestions": "Add: team size, response time improvement, user base"
+        }
+      ],
+      "seniorSummaryNote": "Emphasize cross-functional collaboration and quantifiable improvements."
+    },
+    {
+      "name": "Vikram Patel",
+      "summary": "DevOps engineer familiar with CI/CD pipelines but lacks automation metrics and infra scale.",
+      "suggestions": [
+        {
+          "section": "Experience",
+          "current": "Worked on Jenkins pipelines.",
+          "critique": "Doesn't mention scope, complexity, or automation result.",
+          "rewrite": "[SUGGESTED] Automated CI/CD pipelines with Jenkins and Docker, reducing deployment time from 20 mins to 5 mins across 12 microservices.",
+          "impactSuggestions": "Add: pipeline count, deployment time, automation gain"
+        }
+      ],
+      "seniorSummaryNote": "Show automation impact and cross-team reliability improvements."
+    },
+    {
+      "name": "Sara Fernandes",
+      "summary": "UX/UI designer focused on aesthetics but lacks measurable UX outcomes.",
+      "suggestions": [
+        {
+          "section": "Projects",
+          "current": "Redesigned company dashboard.",
+          "critique": "Purely visual; missing user or business results.",
+          "rewrite": "[SUGGESTED] Redesigned analytics dashboard improving task completion rate by 25% and reducing average session time by 12%.",
+          "impactSuggestions": "Add: completion rate, user satisfaction, usability score"
+        }
+      ],
+      "seniorSummaryNote": "Show data-driven design and A/B testing results."
+    },
+    {
+      "name": "Ankit Gupta",
+      "summary": "Data engineer good with ETL tools but needs to demonstrate data volume and performance optimization.",
+      "suggestions": [
+        {
+          "section": "Experience",
+          "current": "Worked on ETL pipelines using Airflow.",
+          "critique": "No mention of data volume or optimization impact.",
+          "rewrite": "[SUGGESTED] Built and optimized Airflow ETL pipelines processing 500GB/day; reduced pipeline latency by 30% through parallel task scheduling.",
+          "impactSuggestions": "Add: data size, latency improvement, tool versions"
+        }
+      ],
+      "seniorSummaryNote": "Quantify pipeline throughput and reliability improvements."
+    },
+    {
+      "name": "Aisha Khan",
+      "summary": "Frontend engineer with React and Typescript skills; lacks mention of accessibility or performance profiling.",
+      "suggestions": [
+        {
+          "section": "Experience",
+          "current": "Developed React components.",
+          "critique": "Too broad; missing performance or accessibility focus.",
+          "rewrite": "[SUGGESTED] Developed modular React components (Typescript) improving Lighthouse performance score from 72→96 and achieving full WCAG 2.1 compliance.",
+          "impactSuggestions": "Add: performance score, accessibility compliance"
+        }
+      ],
+      "seniorSummaryNote": "Highlight user experience, accessibility, and measurable performance."
+    },
+    {
+      "name": "Ravi Deshmukh",
+      "summary": "Mobile developer (Flutter) with working apps but missing store stats or release metrics.",
+      "suggestions": [
+        {
+          "section": "Projects",
+          "current": "Built a Flutter mobile app for expense tracking.",
+          "critique": "Looks like a personal project; needs proof of scale.",
+          "rewrite": "[SUGGESTED] Built and published Flutter expense tracker app (10k+ downloads, 4.5★ rating) using Firebase backend.",
+          "impactSuggestions": "Add: download count, rating, retention"
+        }
+      ],
+      "seniorSummaryNote": "Show app impact with metrics and continuous updates."
+    },
+    {
+      "name": "Karan Yadav",
+      "summary": "Cloud engineer with AWS certification but resume reads like a course list, not hands-on experience.",
+      "suggestions": [
+        {
+          "section": "Certifications",
+          "current": "AWS Certified Solutions Architect",
+          "critique": "Good credential but needs practical application example.",
+          "rewrite": "[SUGGESTED] Applied AWS Solutions Architect skills to design fault-tolerant multi-AZ infra, cutting monthly cost by 20%.",
+          "impactSuggestions": "Add: cost reduction, uptime improvement"
+        }
+      ],
+      "seniorSummaryNote": "Demonstrate applied cloud skills beyond certifications."
+    },
+    {
+      "name": "Mehul Joshi",
+      "summary": "Security engineer aware of OWASP principles but lacks real incident examples.",
+      "suggestions": [
+        {
+          "section": "Experience",
+          "current": "Performed security audits for applications.",
+          "critique": "Generic — missing tools, metrics, or outcomes.",
+          "rewrite": "[SUGGESTED] Conducted security audits using OWASP ZAP; identified 14 vulnerabilities and improved compliance score from 78%→96%.",
+          "impactSuggestions": "Add: vulnerability count, compliance score"
+        }
+      ],
+      "seniorSummaryNote": "Show measurable security improvements and remediation actions."
+    },
+    {
+      "name": "Tanvi Raj",
+      "summary": "QA engineer strong in testing tools but missing automation coverage and bug metrics.",
+      "suggestions": [
+        {
+          "section": "Experience",
+          "current": "Tested web applications using Selenium.",
+          "critique": "Vague — no test coverage or issue closure data.",
+          "rewrite": "[SUGGESTED] Automated 500+ regression test cases using Selenium and Jest; reduced manual testing effort by 60%.",
+          "impactSuggestions": "Add: test count, coverage %, bug rate reduction"
+        }
+      ],
+      "seniorSummaryNote": "Emphasize automation coverage and QA metrics."
+    },
+    {
+      "name": "Dev Patel",
+      "summary": "Backend engineer good with APIs and microservices but missing scale indicators.",
+      "suggestions": [
+        {
+          "section": "Experience",
+          "current": "Built microservices for billing module.",
+          "critique": "Too general — needs throughput and reliability data.",
+          "rewrite": "[SUGGESTED] Developed microservices for billing handling 40k daily invoices; improved reliability to 99.95% uptime.",
+          "impactSuggestions": "Add: invoices/day, uptime, error rate"
+        }
+      ],
+      "seniorSummaryNote": "Highlight scale, reliability, and distributed system patterns."
+    },
+    {
+      "name": "Simran Kaur",
+      "summary": "Technical writer with good documentation tone but lacks collaboration and usage metrics.",
+      "suggestions": [
+        {
+          "section": "Projects",
+          "current": "Wrote API documentation.",
+          "critique": "Doesn't mention audience reach or clarity impact.",
+          "rewrite": "[SUGGESTED] Authored API documentation for developer portal (used by 3k+ monthly visitors), improving onboarding satisfaction score from 3.2→4.5.",
+          "impactSuggestions": "Add: reader base, satisfaction metrics"
+        }
+      ],
+      "seniorSummaryNote": "Quantify documentation adoption and feedback."
+    },
+    {
+      "name": "Manish Kumar",
+      "summary": "System admin with deep infra knowledge but resume reads like inventory, not impact.",
+      "suggestions": [
+        {
+          "section": "Experience",
+          "current": "Managed 30+ servers.",
+          "critique": "Good baseline — but no mention of uptime or automation.",
+          "rewrite": "[SUGGESTED] Managed 30+ Linux servers achieving 99.98% uptime; implemented shell automation reducing manual patching time by 70%.",
+          "impactSuggestions": "Add: uptime %, automation gains"
+        }
+      ],
+      "seniorSummaryNote": "Turn operations into impact by quantifying stability and efficiency."
+    }
+  ]
+}

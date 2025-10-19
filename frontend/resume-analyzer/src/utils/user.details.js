@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 function useAuth() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [user, setUser] = useState(null);
-  
+
+    useEffect(() => {
       fetch('http://localhost:3000/api/v1/user/auth/profile', {
         method: 'GET',
         headers: {
@@ -30,7 +31,8 @@ function useAuth() {
       .finally(() => {
         setIsLoading(false);
       });
-  
+    }, []);
+
     return { isAuthenticated, isLoading, user };
   }
 

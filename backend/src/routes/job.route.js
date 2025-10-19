@@ -1,15 +1,16 @@
 import express from 'express';
 import { getUser } from '../middleware/user.middleware.js';
-import { createJob, getJobs, getJobById, updateJob, deleteJob } from '../controllers/jobs.controller';
+import { createJob, getJobs, getJobById, updateJob, deleteJob } from '../controllers/jobs.controller.js';
 
 const jobRouter = express.Router();
 
-jobRouter.use(getUser);
-
-jobRouter.route('/').post(createJob);
+// Public routes (no authentication required)
 jobRouter.route('/').get(getJobs);
 jobRouter.route('/:id').get(getJobById);
-jobRouter.route('/:id').put(updateJob);
-jobRouter.route('/:id').delete(deleteJob);
+
+// Protected routes (authentication required)
+jobRouter.route('/').post(getUser, createJob);
+jobRouter.route('/:id').put(getUser, updateJob);
+jobRouter.route('/:id').delete(getUser, deleteJob);
 
 export default jobRouter

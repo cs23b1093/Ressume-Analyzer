@@ -3,7 +3,7 @@ import logger from '../src/utils/logger.js';
 import { exec } from 'child_process';
 import { ApiError } from '../src/utils/errorFormat.js';
 
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV === 'test') {
     logger.info ('currently in test state')
     throw new ApiError({ message: "currently in test state", status: 500 })
 }

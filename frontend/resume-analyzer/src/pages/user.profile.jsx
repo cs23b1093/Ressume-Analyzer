@@ -1,10 +1,8 @@
 import { User, Mail, Calendar, LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import useAuth from '../utils/user.details.js';
 
 const UserProfile = () => {
     const { isAuthenticated, isLoading, user } = useAuth();
-    const navigate = useNavigate();
 
     if (isLoading) {
         return (

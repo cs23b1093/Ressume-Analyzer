@@ -7,6 +7,8 @@ import useAuth from './utils/user.details.js';
 import UserProfile from './pages/user.profile.jsx';
 import Pricing from './pages/pricing.jsx';
 import About from './pages/about.jsx';
+import ChatWithPdf from './pages/chat-with-pdf.jsx';
+import Jobs from './pages/jobs.jsx';
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -81,6 +83,8 @@ export default function App() {
         <Route path='/profile' element={<ProtectedRoute><UserProfile/></ProtectedRoute>}/>
         <Route path='/pricing' element={<Pricing/>}/>
         <Route path='/about' element={<About/>}/>
+        <Route path='/chat' element={<ChatWithPdf/>}/>
+        <Route path='/job' element={<Jobs/>}/>
         <Route path="*" element={<div className="p-6 min-h-screen flex items-center justify-center">404 — Not found</div>} />
       </Routes>
     </div>
