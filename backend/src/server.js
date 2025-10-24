@@ -15,6 +15,11 @@ import planRouter from './routes/plan.route.js'
 import jobRouter from './routes/job.route.js';
 import resumeParserRouter from './routes/resumeParser.route.js';
 import chatRouter from './routes/chat.route.js';
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
+import passport from 'passport';
+import passportConfig from './config/passport.js';
+passportConfig(passport);
 
 if (process.env.NODE_ENV !== 'test') {
     import('../jobs/testRunner.job.js');
@@ -39,6 +44,22 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
 app.use(helmet());
 app.use(CorsInitialisation);
+
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({ mongoUrl: process.env.MONGOOSE_URI, collectionName: 'sessions' }),
+    cookie: {
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    }
+}))
+
+app.use(passport.initialize());
+app.use(passport.session())
 
 if (process.env.NODE_ENV !== 'test') {
     app.use(bodyParser.json());

@@ -1,10 +1,11 @@
 import { useState, useRef } from "react";
 import { Upload, Sparkles, Target, Zap } from "lucide-react";
-import { Link } from "react-router-dom"; // Make sure you have react-router-dom installed
-import PdfParser from "../utils/pdfjs-dist.js";
+import { Link, useNavigate } from "react-router-dom";
+import ResumeLoadingScreen from "../components/ResumeLoadingScreen";
 import ParsedResume from "../components/ParsedResume.jsx";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [loading, setIsLoading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -12,29 +13,29 @@ const Dashboard = () => {
   // Chat sidebar states
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { id: 1, role: "assistant", content: "Hi — upload your resume (PDF) or ask a question about it." },
+    { id: 1, role: "assistant", content: "Hi! I'm here to help with any questions you have." },
   ]);
   const [input, setInput] = useState("");
   const [fileName, setFileName] = useState(null);
-  const [parsedData, setParsedData] = useState(null);
+  const [showThinking, setShowThinking] = useState({});
+
   const fileRef = useRef(null);
   const messageIdCounter = useRef(messages.length + 1);
 
   const parseFile = async (file) => {
     try {
-      const text = await PdfParser(file);
+      const formData = new FormData();
+      formData.append('resume', file);
+
       const response = await fetch('http://localhost:3000/api/v1/resume-parser/parse', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text }),
+        body: formData,
       });
       if (!response.ok) {
         throw new Error('Failed to parse resume');
       }
       const data = await response.json();
-      setParsedData(data.parsedData);
+      // No longer setting parsedData since chat is general
       setMessages((m) => [
         ...m,
         { id: messageIdCounter.current++, role: "assistant", content: <ParsedResume parsedData={data.parsedData} /> },
@@ -49,27 +50,25 @@ const Dashboard = () => {
   };
 
   const sendChatMessage = async (message) => {
-    if (!parsedData) {
-      setMessages((m) => [
-        ...m,
-        { id: messageIdCounter.current++, role: "assistant", content: "Please upload a resume first before asking questions." },
-      ]);
-      return;
-    }
-
     try {
       const response = await fetch('http://localhost:3000/api/v1/chat/chat', {
         method: 'POST',
+        credentials: 'include',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ message, parsedData }),
+        body: JSON.stringify({ message }),
       });
       const result = await response.json();
       if (result.success) {
         setMessages((m) => [
           ...m,
-          { id: messageIdCounter.current++, role: "assistant", content: result.response },
+          {
+            id: messageIdCounter.current++,
+            role: "assistant",
+            content: result.response,
+            thinking: result.thinking
+          },
         ]);
       } else {
         throw new Error(result.message);
@@ -103,7 +102,14 @@ const Dashboard = () => {
       setUploadedFile(file);
       setIsLoading(true);
       await parseFile(file);
-      setIsLoading(false);
+      
+      // Show loading screen after successful parse
+      const loadingScreenTimeout = setTimeout(() => {
+        navigate('/ats');
+      }, 6000); // Total time for all loading steps
+
+      // Cleanup timeout if component unmounts
+      return () => clearTimeout(loadingScreenTimeout);
     }
   };
 
@@ -113,7 +119,14 @@ const Dashboard = () => {
       setUploadedFile(file);
       setIsLoading(true);
       await parseFile(file);
-      setIsLoading(false);
+      
+      // Show loading screen after successful parse
+      const loadingScreenTimeout = setTimeout(() => {
+        navigate('/ats');
+      }, 6000); // Total time for all loading steps
+
+      // Cleanup timeout if component unmounts
+      return () => clearTimeout(loadingScreenTimeout);
     }
   };
 
@@ -141,6 +154,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      {loading && <ResumeLoadingScreen />}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Andada+Pro:wght@400;500;600;700&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap');
@@ -328,10 +342,10 @@ const Dashboard = () => {
                   <div className="w-9 h-9 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-semibold">R</div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <div className="text-sm font-medium">Chat with PDF</div>
+                      <div className="text-sm font-medium">AI Assistant</div>
                       <span className="px-2 py-0.5 text-xs font-semibold text-green-800 bg-green-100 rounded-full">Free</span>
                     </div>
-                    <div className="text-xs text-slate-500">Ask questions about your resume</div>
+                    <div className="text-xs text-slate-500">Ask me anything!</div>
                   </div>
                 </div>
                 <button onClick={toggleSidebar} className="p-2 rounded-md hover:bg-slate-100">
@@ -348,6 +362,24 @@ const Dashboard = () => {
                     <div className={`${m.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white ring-1 ring-black/5 text-slate-800'} max-w-[80%] px-3 py-2 rounded-lg`}>
                       <div className="text-sm">
                         {m.content || m.text}
+                        {m.thinking && (
+                          <div className="mt-2 pt-2 border-t border-gray-200">
+                            <button
+                              onClick={() => setShowThinking(prev => ({ ...prev, [m.id]: !prev[m.id] }))}
+                              className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1"
+                            >
+                              <svg className={`w-3 h-3 transition-transform ${showThinking[m.id] ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
+                              {showThinking[m.id] ? 'Hide thinking' : 'Show thinking'}
+                            </button>
+                            {showThinking[m.id] && (
+                              <div className="mt-1 text-xs text-gray-600 bg-gray-50 p-2 rounded border-l-2 border-indigo-200">
+                                <pre className="whitespace-pre-wrap font-mono">{m.thinking}</pre>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

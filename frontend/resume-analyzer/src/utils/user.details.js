@@ -6,11 +6,12 @@ function useAuth() {
     const [user, setUser] = useState(null);
 
     useEffect(() => {
+      const token = localStorage.getItem('AccessToken');
       fetch('http://localhost:3000/api/v1/user/auth/profile', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + localStorage.getItem('AccessToken') || ''
+          'Authorization': `Bearer ${token}`
         },
         credentials: 'include', // Important: include cookies for authentication
       })
@@ -33,7 +34,21 @@ function useAuth() {
       });
     }, []);
 
-    return { isAuthenticated, isLoading, user };
+    const login = (tokens) => {
+      localStorage.setItem('AccessToken', tokens.accessToken);
+      localStorage.setItem('RefreshToken', tokens.refreshToken);
+      // Optionally trigger a re-check
+      window.location.reload(); // Simple way to refresh auth state
+    };
+
+    const logout = () => {
+      localStorage.removeItem('AccessToken');
+      localStorage.removeItem('RefreshToken');
+      setIsAuthenticated(false);
+      setUser(null);
+    };
+
+    return { isAuthenticated, isLoading, user, login, logout };
   }
 
 export default useAuth;

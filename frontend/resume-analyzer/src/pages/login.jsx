@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import useAuth from "../utils/user.details.js";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -10,6 +11,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -34,8 +36,10 @@ const Login = () => {
     .then(data => {
         console.log(data);
         if (data.success) {
-            localStorage.setItem('AccessToken', data.accessToken);
-            navigate('/dashboard');
+            if (data.success) {
+              navigate('/dashboard');
+              login(data)
+            }
         }
         setIsLoading(false);
     })
@@ -46,8 +50,9 @@ const Login = () => {
   };
 
   const handleSocialLogin = (provider) => {
-    console.log(`${provider} login clicked`);
-    alert(`${provider} login coming soon!`);
+    if (provider === 'Google') {
+      window.location.href = 'http://localhost:3000/api/v1/user/auth/google';
+    }
   };
 
   return (

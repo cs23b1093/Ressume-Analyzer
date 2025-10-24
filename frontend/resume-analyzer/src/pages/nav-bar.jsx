@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Menu, X, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import useAuth from "../utils/user.details.js";
 
 const NavBar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -53,6 +55,17 @@ const NavBar = () => {
             <button className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 px-3 py-2 text-sm font-medium transition-colors duration-200" onClick={() => navigate("/profile")}>
               <User size={18} />
               <span className="hidden sm:block">Profile</span>
+            </button>
+
+            {/* Logout Button */}
+            <button
+              onClick={() => {
+                logout();
+                window.location.href = 'http://localhost:3000/api/v1/user/auth/logout';
+              }}
+              className="text-gray-700 hover:text-red-600 px-3 py-2 text-sm font-medium transition-colors duration-200"
+            >
+              Logout
             </button>
 
             {/* Mobile menu button */}

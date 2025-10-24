@@ -1,8 +1,8 @@
 import { Router } from 'express';
-import { chatWithResume } from '../controllers/chat.controller.js';
+import { chatWithAI } from '../controllers/chat.controller.js';
 
 const router = Router();
 
-router.post('/chat', chatWithResume);
+router.post('/chat', chatWithAI);
 
 export default router;

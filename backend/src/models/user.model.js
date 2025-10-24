@@ -4,7 +4,7 @@ import argon2 from 'argon2';
 const userSchema = new mongoose.Schema({
     fullName: {
         type: String,
-        required: true
+        required: function() { return !this.googleId; } // Required only for non-OAuth users
     },
     avatar_url: {
         type: String,
@@ -17,12 +17,33 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true
+        required: function() { return !this.googleId; } // Required only for non-OAuth users
     },
     username: {
         type: String,
-        required: true,
+        required: function() { return !this.googleId; }, // Required only for non-OAuth users
         unique: true
+    },
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
+    displayName: {
+        type: String,
+        default: null
+    },
+    firstName: {
+        type: String,
+        default: null
+    },
+    lastName: {
+        type: String,
+        default: null
+    },
+    avatar: {
+        type: String,
+        default: null
     },
     verifyCode: {
         type: Number,
@@ -30,22 +51,17 @@ const userSchema = new mongoose.Schema({
     },
     verified: {
         type: Boolean,
-        default: false
+        default: function() { return !!this.googleId; } // Auto-verify OAuth users
+    },
+    plan: {
+        type: String,
+        enum: ['free', 'pro'],
+        default: 'free'
     },
     role: {
         type: String,
         enum: ['admin', 'user'],
         default: 'user'
-    },
-    plan: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Plan',
-        default: null
-    },
-    planType: {
-        type: String,
-        enum: ['Free', 'Pro'],
-        default: 'Free'
     },
     createdAt: {
         type: Date,

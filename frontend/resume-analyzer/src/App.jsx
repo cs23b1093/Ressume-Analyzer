@@ -9,6 +9,7 @@ import Pricing from './pages/pricing.jsx';
 import About from './pages/about.jsx';
 import ChatWithPdf from './pages/chat-with-pdf.jsx';
 import Jobs from './pages/jobs.jsx';
+import ATSDashboard from './pages/ats_dashboard.jsx';
 
 // Protected Route wrapper
 const ProtectedRoute = ({ children }) => {
@@ -85,6 +86,7 @@ export default function App() {
         <Route path='/about' element={<About/>}/>
         <Route path='/chat' element={<ChatWithPdf/>}/>
         <Route path='/job' element={<Jobs/>}/>
+        <Route path='/ats' element={<ATSDashboard/>}/>
         <Route path="*" element={<div className="p-6 min-h-screen flex items-center justify-center">404 — Not found</div>} />
       </Routes>
     </div>

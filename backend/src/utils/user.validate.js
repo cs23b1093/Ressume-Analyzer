@@ -46,7 +46,7 @@ const ValidateNewUserData = (data) => {
                      
         role: joi.string()
                  .valid('admin', 'user')
-                 .required()
+                 .optional()
                  .messages({
                     "any.only": "Role must be either 'admin' or 'user'"
                  }),

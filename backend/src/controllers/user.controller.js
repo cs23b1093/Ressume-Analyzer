@@ -54,8 +54,14 @@ const registerUser = asyncHandler(async (req, res, next) => {
 		}
 		logger.info('email sent');
 
+		const { password, fullName, role } = req.body;
 		const user = new User({
-			...req.body,
+			username,
+			email,
+			password,
+			fullName,
+			role,
+			plan: 'free',
 			verifyCode: otp
 		})
 		await user.save();
