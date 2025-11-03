@@ -5,10 +5,12 @@ import ResumeLoadingScreen from "../components/ResumeLoadingScreen";
 import ParsedResume from "../components/ParsedResume.jsx";
 
 const Dashboard = () => {
-  const navigate = useNavigate();
   const [loading, setIsLoading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [resumeUploaded, setResumeUploaded] = useState(false);
+  const [jobDescription, setJobDescription] = useState('');
+  const [resumeId, setResumeId] = useState(null);
 
   // Chat sidebar states
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -21,6 +23,7 @@ const Dashboard = () => {
 
   const fileRef = useRef(null);
   const messageIdCounter = useRef(messages.length + 1);
+  const navigate = useNavigate();
 
   const parseFile = async (file) => {
     try {
@@ -35,7 +38,8 @@ const Dashboard = () => {
         throw new Error('Failed to parse resume');
       }
       const data = await response.json();
-      // No longer setting parsedData since chat is general
+      // Store resume_id for ATS calculation
+      setResumeId(data.resume_id);
       setMessages((m) => [
         ...m,
         { id: messageIdCounter.current++, role: "assistant", content: <ParsedResume parsedData={data.parsedData} /> },
@@ -100,16 +104,10 @@ const Dashboard = () => {
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const file = e.dataTransfer.files[0];
       setUploadedFile(file);
+      setResumeUploaded(true);
       setIsLoading(true);
       await parseFile(file);
-      
-      // Show loading screen after successful parse
-      const loadingScreenTimeout = setTimeout(() => {
-        navigate('/ats');
-      }, 6000); // Total time for all loading steps
-
-      // Cleanup timeout if component unmounts
-      return () => clearTimeout(loadingScreenTimeout);
+      setIsLoading(false);
     }
   };
 
@@ -117,16 +115,10 @@ const Dashboard = () => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setUploadedFile(file);
+      setResumeUploaded(true);
       setIsLoading(true);
       await parseFile(file);
-      
-      // Show loading screen after successful parse
-      const loadingScreenTimeout = setTimeout(() => {
-        navigate('/ats');
-      }, 6000); // Total time for all loading steps
-
-      // Cleanup timeout if component unmounts
-      return () => clearTimeout(loadingScreenTimeout);
+      setIsLoading(false);
     }
   };
 
@@ -154,7 +146,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {loading && <ResumeLoadingScreen />}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Andada+Pro:wght@400;500;600;700&display=swap');
         @import url('https://fonts.googleapis.com/css2?family=Architects+Daughter&display=swap');
@@ -224,6 +215,37 @@ const Dashboard = () => {
               {loading && (
                 <div className="mt-4">
                   <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-orange-500 mx-auto"></div>
+                </div>
+              )}
+              {resumeUploaded && !loading && (
+                <div className="mt-6 p-4 bg-white rounded-lg border border-gray-200">
+                  <h4 className="text-lg font-semibold text-gray-800 mb-3">Check ATS Score</h4>
+                  <div className="flex gap-2">
+                    <textarea
+                      value={jobDescription}
+                      onChange={(e) => setJobDescription(e.target.value)}
+                      placeholder="Paste Job Description here..."
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 h-24"
+                    />
+                    <button
+                      className="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={(e) => {
+                        if (!jobDescription.trim()) {
+                          e.preventDefault();
+                          alert('Please enter a Job Description');
+                          return;
+                        }
+                        if (!resumeId) {
+                          e.preventDefault();
+                          alert('Please upload a resume first');
+                          return;
+                        }
+                        navigate(`/ats?resume_id=${resumeId}`, { state: { jobDescription } });
+                      }}
+                    >
+                      Calculate
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
@@ -318,6 +340,8 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+
 
       {/* Chat Button */}
       <div className="fixed bottom-6 right-6 z-50">

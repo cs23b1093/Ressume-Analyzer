@@ -13,4 +13,4 @@ jobRouter.route('/').post(getUser, createJob);
 jobRouter.route('/:id').put(getUser, updateJob);
 jobRouter.route('/:id').delete(getUser, deleteJob);
 
-export default jobRouter
+export default jobRouter;

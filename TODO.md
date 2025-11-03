@@ -1,15 +1,19 @@
-# TODO: Move Resume Parsing to Backend Only
+# TODO: Store Resume Data in Redis and Use in ATS Calculation
 
-## Backend Changes
-- [x] Install multer for file upload handling in backend
-- [x] Modify `backend/src/controllers/resumeParser.controller.js` to accept file upload, extract text from PDF, then parse it
-- [x] Update `backend/src/routes/resumeParser.route.js` to handle multipart/form-data for file upload
+## Tasks to Complete
 
-## Frontend Changes
-- [x] Update `frontend/resume-analyzer/src/pages/dashboard.jsx` to send file directly to backend instead of extracting text
-- [x] Remove `frontend/resume-analyzer/src/utils/resumeParser.js`
-- [x] Remove `frontend/resume-analyzer/src/utils/pdfjs-dist.js` (check if used elsewhere)
+- [ ] Edit `backend/src/controllers/resumeParser.controller.js`:
+  - Import `crypto` for UUID generation.
+  - After parsing `parsedData`, generate a unique UUID.
+  - Store `parsedData` in Redis with key `resume:${uuid}` using `req.redisClient.set()`.
+  - Modify response to include `resume_id` (the UUID) instead of directly returning `parsedData`.
 
-## Testing
-- [x] Test file upload and parsing functionality
-- [x] Ensure ParsedResume component works with backend response
+- [ ] Edit `backend/src/controllers/ats.controller.js`:
+  - Change the request body validation to accept `resume_id` instead of `resumeData`.
+  - Fetch the resume data from Redis using `req.redisClient.get(\`resume:${resume_id}\`)`.
+  - Parse the JSON data and use it as `resumeData` for the ATS calculation.
+  - Add error handling if the resume_id is not found in Redis (throw ApiError).
+
+- [ ] Test the endpoints:
+  - Parse a resume using the resume-parser endpoint to get `resume_id`.
+  - Use the `resume_id` in the ATS calculation endpoint to ensure data is fetched correctly.

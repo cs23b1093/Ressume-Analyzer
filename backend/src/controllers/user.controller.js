@@ -57,7 +57,7 @@ const registerUser = asyncHandler(async (req, res, next) => {
 		const { password, fullName, role } = req.body;
 		const user = new User({
 			username,
-			email,
+			email,x,
 			password,
 			fullName,
 			role,

@@ -3,6 +3,7 @@ import { ApiError } from "../utils/errorFormat.js";
 import logger from "../utils/logger.js";
 import dotenv from "dotenv";
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import crypto from "crypto";
 
 dotenv.config();
 
@@ -255,9 +256,22 @@ const parseResumeText = asyncHandler(async (req, res) => {
       (parsed && Array.isArray(parsed.certifications) && parsed.certifications.length) ? parsed.certifications : []
   });
 
+  // Generate unique ID and store in Redis
+  const resumeId = crypto.randomUUID();
+  const redisKey = `resume:${resumeId}`;
+
+  try {
+    await req.redisClient.set(redisKey, JSON.stringify(final), 'EX', 3600); // Expire in 1 hour
+    logger.info(`Resume data stored in Redis with key: ${redisKey}`);
+  } catch (redisError) {
+    logger.error("Failed to store resume data in Redis", { message: redisError?.message });
+    throw new ApiError({ message: "Failed to store resume data", status: 500, meta: redisError?.message });
+  }
+
   logger.info("Resume parsed successfully (improved)");
   return res.status(200).json({
     message: "Resume parsed successfully",
+    resume_id: resumeId,
     parsedData: final,
     success: true
   });

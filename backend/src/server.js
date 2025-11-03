@@ -14,6 +14,7 @@ import resumeRouter from './routes/resume.route.js';
 import planRouter from './routes/plan.route.js'
 import jobRouter from './routes/job.route.js';
 import resumeParserRouter from './routes/resumeParser.route.js';
+import atsRouter from './routes/ats.route.js';
 import chatRouter from './routes/chat.route.js';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
@@ -53,8 +54,8 @@ app.use(session({
     cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 7,
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+        secure: false, // Allow in dev for cross-origin
+        sameSite: 'none' // Allow cross-origin in dev
     }
 }))
 
@@ -116,6 +117,7 @@ app.use('/api/v1/plan', planRouter);
 app.use('/api/v1/job', jobRouter);
 app.use('/api/v1/resume-parser', resumeParserRouter);
 app.use('/api/v1/chat', chatRouter);
+app.use('/api/v1/ats', atsRouter);
 
 app.use(globalErrorHandler);
 
